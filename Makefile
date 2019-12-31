@@ -143,7 +143,7 @@ override CFLAGS += \
 -D_BSD_SOURCE
 
 # NOTE: The -Wl,--gc-sections flag may interfere with debugging using gdb.
-override LDFLAGS +=
+override LDFLAGS += -lm
 
 
 ####################################################################
