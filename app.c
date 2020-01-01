@@ -1,20 +1,3 @@
-/***************************************************************************//**
- * @file
- * @brief Event handling and application code for Empty NCP Host application example
- *******************************************************************************
- * # License
- * <b>Copyright 2018 Silicon Laboratories Inc. www.silabs.com</b>
- *******************************************************************************
- *
- * The licensor of this software is Silicon Laboratories Inc. Your use of this
- * software is governed by the terms of Silicon Labs Master Software License
- * Agreement (MSLA) available at
- * www.silabs.com/about-us/legal/master-software-license-agreement. This
- * software is distributed to you in Source Code format and is governed by the
- * sections of the MSLA applicable to Source Code.
- *
- ******************************************************************************/
-
 /* standard library headers */
 #include <stdint.h>
 #include <string.h>
@@ -30,7 +13,7 @@
 
 /* Own header */
 #include "app.h"
-#include "dump.h"
+//#include "dump.h"
 #include "support.h"
 
 // App booted flag
@@ -172,18 +155,29 @@ void appHandleEvents(struct gecko_cmd_packet *evt)
       printf("No bondings\n");
     } else {
       printf("%d bondings:\n", bonding_count);
-      printf("Bonding     Bluetooth     Address\n");
-      printf(" Index       Address       Type  \n");
-      printf("======= ================= =======\n");
+      printf("Bonding     Bluetooth     Address                                 \n");
+      printf(" Index       Address       Type                 IRK               \n");
+      printf("======= ================= ======= ================================\n");
       for(uint8 bonding = 0; bonding < MAX_BONDS; bonding++) {
-	if(bondings[bonding].present) printf("   %2x   %02x:%02x:%02x:%02x:%02x:%02x   %02x\n", bonding,
-					     bondings[bonding].address.addr[5],
-					     bondings[bonding].address.addr[4],
-					     bondings[bonding].address.addr[3],
-					     bondings[bonding].address.addr[2],
-					     bondings[bonding].address.addr[1],
-					     bondings[bonding].address.addr[0],
-					     bondings[bonding].type);
+	if(bondings[bonding].present) {
+	  char buf[33];
+	  buf[0] = 0;
+	  uint16 index = 0x8006 + 0x100 * bonding;
+	  struct gecko_msg_flash_ps_load_rsp_t *resp = gecko_cmd_flash_ps_load(index);
+	  if((0 == resp->result)&&(16 == resp->value.len)) {
+	    for(int i = 0; i < 16; i++) {
+	      sprintf(buf+(i<<1),"%02x",resp->value.data[15-i]);
+	    }
+	  }
+	  printf("   %2x   %02x:%02x:%02x:%02x:%02x:%02x   %02x    %32s\n", bonding,
+		 bondings[bonding].address.addr[5],
+		 bondings[bonding].address.addr[4],
+		 bondings[bonding].address.addr[3],
+		 bondings[bonding].address.addr[2],
+		 bondings[bonding].address.addr[1],
+		 bondings[bonding].address.addr[0],
+		 bondings[bonding].type, buf);
+	}
       }
     }
     gecko_cmd_hardware_set_soft_timer(0,0,1);
